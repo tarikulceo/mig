@@ -1,0 +1,8 @@
+[17-Aug-2025 15:58:10 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/migstar/public_html/config/services.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/migstar/public_html/config/services.php on line 18
+[17-Aug-2025 16:03:22 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/migstar/public_html/config/database.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/migstar/public_html/config/database.php on line 16
