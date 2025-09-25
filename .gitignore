@@ -34,4 +34,6 @@ install.zip
 public/uploads.zip
 .env
 public/all
+backupmg.zip
+*.zip
 
