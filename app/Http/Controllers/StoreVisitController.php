@@ -214,4 +214,46 @@ class StoreVisitController extends Controller
             return back();
         }
     }
+
+    /**
+     * Get visits by store for AJAX requests
+     */
+    public function getVisitsByStore($storeId)
+    {
+        try {
+            $query = StoreVisit::where('retail_store_id', $storeId)
+                ->with(['salesRepresentative.user'])
+                ->latest('visit_date')
+                ->limit(10);
+
+            // If user is sales rep, only show their visits
+            if (auth()->user()->user_type === 'sales_rep') {
+                $salesRep = SalesRepresentative::where('user_id', auth()->id())->first();
+                if ($salesRep) {
+                    $query->where('sales_rep_id', $salesRep->id);
+                }
+            }
+
+            $visits = $query->get()->map(function ($visit) {
+                return [
+                    'id' => $visit->id,
+                    'visit_date' => $visit->visit_date->format('Y-m-d'),
+                    'purpose' => $visit->purpose,
+                    'status' => $visit->status,
+                    'sales_rep' => $visit->salesRepresentative ? $visit->salesRepresentative->user->name : 'N/A'
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'visits' => $visits
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading visits: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -71,6 +71,16 @@
                         <td class="text-left">{{ translate('Established') }}:</td>
                         <td class="text-right">{{ $store->established_date ? $store->established_date->format('M d, Y') : 'N/A' }}</td>
                     </tr>
+                    <tr class="bg-soft-danger">
+                        <td class="text-left font-weight-bold">{{ translate('Due Amount') }}:</td>
+                        <td class="text-right">
+                            @if($monthlyStats['total_due_amount'] > 0)
+                                <span class="text-danger font-weight-bold">{{ single_price($monthlyStats['total_due_amount']) }}</span>
+                            @else
+                                <span class="text-success">{{ translate('No Due') }}</span>
+                            @endif
+                        </td>
+                    </tr>
                 </table>
             </div>
         </div>
@@ -117,6 +127,47 @@
                 </div>
             </div>
         </div>
+
+        <!-- Due Amounts Section -->
+        @if($monthlyStats['total_due_amount'] > 0)
+        <div class="card mt-3">
+            <div class="card-header bg-soft-danger">
+                <h5 class="mb-0 h6 text-danger">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    {{translate('Due Payments')}}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="display-4 text-danger font-weight-bold">
+                        {{ single_price($monthlyStats['total_due_amount']) }}
+                    </div>
+                    <small class="text-muted">{{translate('Total Outstanding Amount')}}</small>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-right">
+                            <div class="font-weight-bold text-warning">{{ $monthlyStats['orders_with_due'] }}</div>
+                            <small class="text-muted">{{translate('Orders')}}</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="font-weight-bold text-info">{{ $monthlyStats['total_orders'] }}</div>
+                        <small class="text-muted">{{translate('Total Orders')}}</small>
+                    </div>
+                </div>
+
+                <div class="text-center mt-3">
+                    <a href="{{ route('store_orders.due_amounts', ['retail_store_id' => $store->id]) }}" 
+                       class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-eye mr-1"></i>
+                        {{translate('View Due Orders')}}
+                    </a>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 
     <div class="col-lg-8">
@@ -178,6 +229,47 @@
                         </div>
                         <div class="card-body">
                             {{ single_price($monthlyStats['monthly_sales']) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Due Amount Information -->
+        <div class="row gutters-10 mb-3">
+            <div class="col-md-6">
+                <div class="card card-statistic-2">
+                    <div class="card-icon shadow-primary bg-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4>{{translate('Total Due Amount')}}</h4>
+                        </div>
+                        <div class="card-body">
+                            <span class="text-danger font-weight-bold">{{ single_price($monthlyStats['total_due_amount'] ?? 0) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card card-statistic-2">
+                    <div class="card-icon shadow-primary bg-warning">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4>{{translate('Orders with Due')}}</h4>
+                        </div>
+                        <div class="card-body">
+                            <span class="text-warning font-weight-bold">{{ $monthlyStats['orders_with_due'] ?? 0 }}</span>
+                            @if($monthlyStats['orders_with_due'] > 0)
+                                <small class="text-muted d-block">
+                                    <a href="{{ route('store_orders.due_amounts', ['retail_store_id' => $store->id]) }}" class="text-primary">
+                                        {{translate('View Details')}}
+                                    </a>
+                                </small>
+                            @endif
                         </div>
                     </div>
                 </div>

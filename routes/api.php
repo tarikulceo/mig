@@ -372,7 +372,7 @@ Route::group(['prefix' => 'v2', 'middleware' => ['app_language']], function () {
 
     Route::get('payfast/initiate', 'App\Http\Controllers\Api\V2\PayfastController@pay');
 
-    Route::get('/myfatoorah/initiate', 'App\Http\Controllers\Api\V2\MyfatoorahController@pay');
+    Route::get('/myfatoorah/initiate', [\App\Http\Controllers\Api\V2\MyfatoorahController::class, 'pay']);
 
     Route::get('phonepe/payment/pay', 'App\Http\Controllers\Api\V2\PhonepeController@pay');
 
@@ -454,7 +454,7 @@ Route::group(['prefix' => 'v2', 'middleware' => ['app_language']], function () {
         });
         //Payfast routes <ends>
 
-        Route::get('/myfatoorah/callback', 'App\Http\Controllers\Api\V2\MyfatoorahController@callback')->name('api.myfatoorah.callback');
+        Route::get('/myfatoorah/callback', [\App\Http\Controllers\Api\V2\MyfatoorahController::class, 'callback'])->name('api.myfatoorah.callback');
 
 
         Route::any('/phonepe/redirecturl', 'App\Http\Controllers\Api\V2\PhonepeController@phonepe_redirecturl')->name('api.phonepe.redirecturl');
@@ -466,6 +466,56 @@ Route::group(['prefix' => 'v2', 'middleware' => ['app_language']], function () {
         Route::post('file/upload', 'upload');
         Route::get('file/all', 'index');
         Route::get('file/delete/{id}', 'destroy');
+    });
+});
+
+// Sales Representatives Mobile API
+Route::group(['prefix' => 'v2/sales-rep', 'middleware' => ['app_language', 'auth:sanctum']], function () {
+    Route::controller(App\Http\Controllers\Api\V2\SalesRepresentativeApiController::class)->group(function () {
+        // Dashboard & Profile
+        Route::get('/dashboard', 'dashboard');
+        Route::get('/profile', 'profile');
+        Route::put('/profile', 'updateProfile');
+        
+        // Location & GPS
+        Route::post('/location', 'updateLocation');
+        Route::get('/nearby-stores', 'getNearbyStores');
+        
+        // Store Visits
+        Route::get('/visits', 'getVisits');
+        Route::get('/visits/today', 'getTodayVisits');
+        Route::post('/visits/{id}/start', 'startVisit');
+        Route::post('/visits/{id}/complete', 'completeVisit');
+        Route::post('/visits/{id}/photos', 'uploadVisitPhotos');
+        Route::post('/visits', 'createVisit');
+        
+        // Store Orders
+        Route::get('/orders', 'getOrders');
+        Route::post('/orders', 'createOrder');
+        Route::get('/orders/{id}', 'getOrder');
+        
+        // Retail Stores
+        Route::get('/stores', 'getStores');
+        Route::get('/stores/{id}', 'getStore');
+        
+        // Performance Analytics
+        Route::get('/analytics', 'getAnalytics');
+        Route::get('/targets', 'getTargets');
+        Route::get('/commissions', 'getCommissions');
+        
+        // Activities
+        Route::get('/activities', 'getActivities');
+        Route::post('/activities', 'createActivity');
+        Route::put('/activities/{id}', 'updateActivity');
+        
+        // Notifications
+        Route::post('/fcm-token', 'updateFcmToken');
+        Route::get('/notifications', 'getNotifications');
+        Route::post('/notifications/{id}/read', 'markNotificationAsRead');
+        
+        // Offline Sync
+        Route::post('/sync/uploads', 'syncOfflineData');
+        Route::get('/sync/downloads', 'getDataForOfflineSync');
     });
 });
 

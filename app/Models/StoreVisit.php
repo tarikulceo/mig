@@ -13,6 +13,7 @@ class StoreVisit extends Model
         'retail_store_id',
         'sales_rep_id',
         'visit_date',
+        'scheduled_time',
         'check_in_time',
         'check_out_time',
         'purpose',
@@ -29,6 +30,7 @@ class StoreVisit extends Model
     protected $casts = [
         'visit_date' => 'datetime',
         'next_visit_date' => 'datetime',
+        'scheduled_time' => 'datetime:H:i',
         'check_in_time' => 'datetime:H:i',
         'check_out_time' => 'datetime:H:i',
         'photos' => 'array',
@@ -45,6 +47,16 @@ class StoreVisit extends Model
     public function salesRepresentative()
     {
         return $this->belongsTo(SalesRepresentative::class, 'sales_rep_id');
+    }
+
+    public function storeOrders()
+    {
+        return $this->hasMany(StoreOrder::class, 'store_visit_id');
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'store_visit_id');
     }
 
     // Scopes

@@ -168,9 +168,9 @@
                                 <td>{{ $transfer->quantity }}</td>
                                 <td>
                                     @if($transfer->status == 'pending')
-                                        <span class="badge badge-warning">{{translate('Pending')}}</span>
+                                        <span class="badge badge-inline badge-warning">{{translate('Pending')}}</span>
                                     @elseif($transfer->status == 'in_transit')
-                                        <span class="badge badge-info">{{translate('In Transit')}}</span>
+                                        <span class="badge badge-inline badge-info">{{translate('In Transit')}}</span>
                                     @elseif($transfer->status == 'completed')
                                         <span class="badge badge-success">{{translate('Completed')}}</span>
                                     @else

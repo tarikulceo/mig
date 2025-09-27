@@ -66,6 +66,7 @@ use App\Http\Controllers\TestSalesRepController;
 use App\Http\Controllers\PersonalSalesController;
 use App\Http\Controllers\RetailStoreController;
 use App\Http\Controllers\StoreVisitController;
+use App\Http\Controllers\StoreOrderController;
 use App\Http\Controllers\Cybersource\CybersourceSettingController;
 
 /*
@@ -432,7 +433,9 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'admin', 'prevent-ba
     Route::controller(SalesRepresentativeController::class)->group(function () {
         Route::get('/sales-representatives', 'index')->name('sales_representatives.index');
         Route::get('/sales-representatives/dashboard', 'dashboard')->name('sales_representatives.dashboard');
+        Route::get('/sales-representatives/mobile-dashboard', 'mobileDashboard')->name('sales_representatives.mobile_dashboard');
         Route::get('/sales-representatives/create', 'create')->name('sales_representatives.create');
+        Route::get('/sales-representatives/analytics', 'analytics')->name('sales_representatives.analytics');
         Route::post('/sales-representatives', 'store')->name('sales_representatives.store');
         Route::get('/sales-representatives/{id}', 'show')->name('sales_representatives.show');
         Route::get('/sales-representatives/{id}/edit', 'edit')->name('sales_representatives.edit');
@@ -444,6 +447,14 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'admin', 'prevent-ba
         Route::post('/sales-representatives/approve-commission', 'approveCommission')->name('sales_representatives.approve_commission');
         Route::post('/sales-representatives/bulk-approve-commissions', 'bulkApproveCommissions')->name('sales_representatives.bulk_approve_commissions');
         Route::get('/sales-representatives/commission-analytics', 'commissionAnalytics')->name('sales_representatives.commission_analytics');
+        
+        // Mobile Features & API Endpoints
+        Route::post('/sales-representatives/update-location', 'updateLocation')->name('sales_representatives.update_location');
+        Route::get('/sales-representatives/nearby-stores', 'getNearbyStores')->name('sales_representatives.nearby_stores');
+        Route::post('/sales-representatives/start-visit/{visitId}', 'startVisit')->name('sales_representatives.start_visit');
+        Route::post('/sales-representatives/complete-visit/{visitId}', 'completeVisit')->name('sales_representatives.complete_visit');
+        Route::post('/sales-representatives/update-fcm-token', 'updateFcmToken')->name('sales_representatives.update_fcm_token');
+        Route::post('/sales-representatives/upload-visit-photos/{visitId}', 'uploadVisitPhotos')->name('sales_representatives.upload_visit_photos');
         
         Route::post('/assign-customer', 'assignCustomer')->name('sales_rep.assign_customer');
         Route::post('/bulk-assign-customers', 'bulkAssignCustomers')->name('sales_rep.bulk_assign_customers');
@@ -471,6 +482,34 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'admin', 'prevent-ba
         'edit' => 'store_visits.edit',
         'update' => 'store_visits.update',
         'destroy' => 'store_visits.destroy'
+    ]);
+
+    // Store Visits by Store (AJAX endpoint)
+    Route::controller(StoreVisitController::class)->group(function () {
+        Route::get('/store-visits/by-store/{storeId}', 'getVisitsByStore')->name('store_visits.by_store');
+    });
+
+    // Store Order additional routes (must be BEFORE resource routes)
+    Route::controller(StoreOrderController::class)->group(function () {
+        Route::get('/store-orders/due-amounts', 'getDueAmounts')->name('store_orders.due_amounts');
+        Route::get('/store-orders/export-due-amounts', 'exportDueAmounts')->name('store_orders.export_due_amounts');
+        Route::post('/store-orders/quick-order', 'quickOrder')->name('store_orders.quick_order');
+        Route::post('/store-orders/{id}/update-status', 'updateStatus')->name('store_orders.update_status');
+        Route::post('/store-orders/{id}/update-payment', 'updatePaymentStatus')->name('store_orders.update_payment');
+        Route::post('/store-orders/{id}/add-payment', 'addPartialPayment')->name('store_orders.add_payment');
+        Route::get('/store-orders/{id}/payment-history', 'getPaymentHistory')->name('store_orders.payment_history');
+        Route::get('/store-orders/{id}/invoice', 'generateInvoice')->name('store_orders.invoice');
+    });
+
+    // Store Orders Management
+    Route::resource('store-orders', StoreOrderController::class)->names([
+        'index' => 'store_orders.index',
+        'create' => 'store_orders.create', 
+        'store' => 'store_orders.store',
+        'show' => 'store_orders.show',
+        'edit' => 'store_orders.edit',
+        'update' => 'store_orders.update',
+        'destroy' => 'store_orders.destroy'
     ]);
 
     // Sales Territories

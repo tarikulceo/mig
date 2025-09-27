@@ -493,6 +493,22 @@ class RetailStoreController extends Controller
     {
         $currentMonth = Carbon::now();
         
+        // Get store orders with due amounts
+        $totalDueAmount = \App\Models\StoreOrder::where('retail_store_id', $store->id)
+            ->where('due_amount', '>', 0)
+            ->sum('due_amount');
+
+        $ordersWithDue = \App\Models\StoreOrder::where('retail_store_id', $store->id)
+            ->where('due_amount', '>', 0)
+            ->count();
+
+        $totalOrders = \App\Models\StoreOrder::where('retail_store_id', $store->id)->count();
+        
+        $monthlyOrders = \App\Models\StoreOrder::where('retail_store_id', $store->id)
+            ->whereMonth('created_at', $currentMonth->month)
+            ->whereYear('created_at', $currentMonth->year)
+            ->sum('grand_total');
+
         $stats = [
             'visits_count' => $store->visits()
                 ->whereMonth('visit_date', $currentMonth->month)
@@ -505,10 +521,10 @@ class RetailStoreController extends Controller
                 ->where('visit_status', 'completed')
                 ->count(),
                 
-            // Note: Removed orders statistics as retail stores don't have direct orders
-            // Orders are placed by customers through the e-commerce platform
-            'total_orders' => 0, // Placeholder - could be calculated differently if needed
-            'monthly_sales' => 0 // Placeholder - could be calculated differently if needed
+            'total_orders' => $totalOrders,
+            'monthly_sales' => $monthlyOrders,
+            'total_due_amount' => $totalDueAmount,
+            'orders_with_due' => $ordersWithDue
         ];
 
         return $stats;

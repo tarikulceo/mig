@@ -1200,9 +1200,45 @@ if (!function_exists('app_timezone')) {
 if (!function_exists('uploaded_asset')) {
     function uploaded_asset($id)
     {
-        if (($asset = Upload::find($id)) != null) {
+        // Handle null or empty ID
+        if (empty($id)) {
+            return static_asset('assets/img/placeholder.jpg');
+        }
+        
+        // If the parameter is already an Upload model, use it directly
+        if ($id instanceof \App\Models\Upload) {
+            $asset = $id;
             return $asset->external_link == null ? my_asset($asset->file_name) : $asset->external_link;
         }
+        
+        // If ID is an array or collection, get the first ID
+        if (is_array($id) || $id instanceof \Illuminate\Support\Collection) {
+            $id = is_array($id) ? reset($id) : $id->first();
+            if (empty($id)) {
+                return static_asset('assets/img/placeholder.jpg');
+            }
+            // If the first item is an Upload model, use it
+            if ($id instanceof \App\Models\Upload) {
+                return $id->external_link == null ? my_asset($id->file_name) : $id->external_link;
+            }
+        }
+        
+        try {
+            $asset = Upload::find($id);
+            
+            // Check if find() returned a collection (shouldn't happen, but handle it)
+            if ($asset instanceof \Illuminate\Support\Collection) {
+                $asset = $asset->first();
+            }
+            
+            if ($asset != null) {
+                return $asset->external_link == null ? my_asset($asset->file_name) : $asset->external_link;
+            }
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::warning('uploaded_asset error: ' . $e->getMessage() . ' for ID: ' . $id);
+        }
+        
         return static_asset('assets/img/placeholder.jpg');
     }
 }

@@ -150,19 +150,19 @@
                         <td>
                             @switch($commission->status)
                                 @case('pending')
-                                    <span class="badge badge-warning">{{ translate('Pending') }}</span>
+                                    <span class="badge badge-inline badge-warning">{{ translate('Pending') }}</span>
                                     @break
                                 @case('approved')
-                                    <span class="badge badge-success">{{ translate('Approved') }}</span>
+                                    <span class="badge badge-inline badge-success">{{ translate('Approved') }}</span>
                                     @break
                                 @case('paid')
-                                    <span class="badge badge-primary">{{ translate('Paid') }}</span>
+                                    <span class="badge badge-inline badge-primary">{{ translate('Paid') }}</span>
                                     @break
                                 @case('cancelled')
-                                    <span class="badge badge-secondary">{{ translate('Cancelled') }}</span>
+                                    <span class="badge badge-inline badge-secondary">{{ translate('Cancelled') }}</span>
                                     @break
                                 @default
-                                    <span class="badge badge-info">{{ ucfirst($commission->status) }}</span>
+                                    <span class="badge badge-inline badge-info">{{ ucfirst($commission->status) }}</span>
                             @endswitch
                         </td>
                         <td>{{ $commission->commission_date->format('d M, Y H:i') }}</td>

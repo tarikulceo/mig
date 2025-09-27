@@ -28,7 +28,7 @@ Route::controller(ToyyibpayController::class)->group(function () {
 });
 
 //Myfatoorah START
-Route::get('/myfatoorah/callback', [MyfatoorahController::class,'callback'])->name('myfatoorah.callback');
+Route::get('/myfatoorah/callback', [\App\Http\Controllers\Api\V2\MyfatoorahController::class,'callback'])->name('myfatoorah.callback');
 
 //Khalti START
 Route::any('/khalti/payment/done', [KhaltiController::class,'paymentDone'])->name('khalti.success');

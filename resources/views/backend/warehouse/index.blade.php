@@ -69,16 +69,16 @@
                             @endif
                         </td>
                         <td>
-                            <span class="badge badge-info">{{ $warehouse->total_products }}</span>
+                            <span class="badge badge-inline badge-info">{{ $warehouse->total_products }}</span>
                         </td>
                         <td>
-                            <span class="badge badge-secondary">{{ $warehouse->total_stock }}</span>
+                            <span class="badge badge-inline badge-secondary">{{ $warehouse->total_stock }}</span>
                         </td>
                         <td>
                             @if($warehouse->low_stock_products_count > 0)
-                                <span class="badge badge-warning">{{ $warehouse->low_stock_products_count }}</span>
+                                <span class="badge badge-inline badge-warning">{{ $warehouse->low_stock_products_count }}</span>
                             @else
-                                <span class="badge badge-success">0</span>
+                                <span class="badge badge-inline badge-success">0</span>
                             @endif
                         </td>
                         <td>

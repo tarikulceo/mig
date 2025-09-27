@@ -86,9 +86,9 @@
                                 @if($activity->status == 'completed')
                                     <span class="badge badge-success badge-lg">{{ translate('Completed') }}</span>
                                 @elseif($activity->status == 'in_progress')
-                                    <span class="badge badge-warning badge-lg">{{ translate('In Progress') }}</span>
+                                    <span class="badge badge-inline badge-warning badge-lg">{{ translate('In Progress') }}</span>
                                 @else
-                                    <span class="badge badge-info badge-lg">{{ translate('Scheduled') }}</span>
+                                    <span class="badge badge-inline badge-info badge-lg">{{ translate('Scheduled') }}</span>
                                 @endif
                             </div>
                         </div>

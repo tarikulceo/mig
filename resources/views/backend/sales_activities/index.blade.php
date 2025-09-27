@@ -68,18 +68,18 @@
                         @if($activity->status == 'completed')
                             <span class="badge badge-success">{{ translate('Completed') }}</span>
                         @elseif($activity->status == 'in_progress')
-                            <span class="badge badge-warning">{{ translate('In Progress') }}</span>
+                            <span class="badge badge-inline badge-warning">{{ translate('In Progress') }}</span>
                         @else
-                            <span class="badge badge-info">{{ translate('Scheduled') }}</span>
+                            <span class="badge badge-inline badge-info">{{ translate('Scheduled') }}</span>
                         @endif
                     </td>
                     <td>
                         @if($activity->follow_up_date)
                             <span class="d-block">{{ date('M d, Y', strtotime($activity->follow_up_date)) }}</span>
                             @if($activity->follow_up_date < now())
-                                <span class="badge badge-danger badge-sm">{{ translate('Overdue') }}</span>
+                                <span class="badge badge-inline badge-danger badge-sm">{{ translate('Overdue') }}</span>
                             @else
-                                <span class="badge badge-info badge-sm">{{ translate('Upcoming') }}</span>
+                                <span class="badge badge-inline badge-info badge-sm">{{ translate('Upcoming') }}</span>
                             @endif
                         @else
                             <span class="text-muted">{{ translate('None') }}</span>

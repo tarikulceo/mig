@@ -73,8 +73,15 @@ class RetailStore extends Model
         return $this->hasMany(StoreVisit::class);
     }
 
-    // Remove orders relationship - retail stores don't have direct orders in this system
-    // Orders are made by customers through the e-commerce platform
+    public function storeOrders()
+    {
+        return $this->hasMany(StoreOrder::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 
     // Scopes
     public function scopeActive($query)

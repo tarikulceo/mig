@@ -49,8 +49,8 @@
                         <td>{{ ($key+1) + ($stocks->currentPage() - 1)*$stocks->perPage() }}</td>
                         <td>
                             <div class="d-flex align-items-center">
-                                @if($stock->product->thumbnail)
-                                    <img src="{{ uploaded_asset($stock->product->thumbnail->file_name) }}" class="size-50px img-fit mr-2">
+                                @if($stock->product->thumbnail_img)
+                                    <img src="{{ uploaded_asset($stock->product->thumbnail_img) }}" class="size-50px img-fit mr-2">
                                 @else
                                     <img src="{{ static_asset('assets/img/placeholder.jpg') }}" class="size-50px img-fit mr-2">
                                 @endif
@@ -76,7 +76,7 @@
                         </td>
                         <td>
                             @if($stock->reserved_quantity > 0)
-                                <span class="badge badge-warning">{{ $stock->reserved_quantity }}</span>
+                                <span class="badge badge-inline badge-warning">{{ $stock->reserved_quantity }}</span>
                             @else
                                 <span class="text-muted">0</span>
                             @endif

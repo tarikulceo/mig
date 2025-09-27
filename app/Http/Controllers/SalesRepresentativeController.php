@@ -652,4 +652,460 @@ class SalesRepresentativeController extends Controller
             'topProducts', 'repSummaries', 'totalStats', 'startDate', 'endDate'
         ));
     }
+
+    /**
+     * Mobile dashboard for sales representatives
+     */
+    public function mobileDashboard()
+    {
+        // Get current sales rep
+        $salesRep = SalesRepresentative::where('user_id', auth()->id())->first();
+        if (!$salesRep) {
+            abort(403, 'Unauthorized access');
+        }
+
+        $today = Carbon::today();
+        
+        // Today's stats
+        $todayVisits = \App\Models\StoreVisit::where('sales_rep_id', $salesRep->id)
+            ->whereDate('visit_date', $today)
+            ->count();
+
+        $todayOrders = \App\Models\StoreOrder::where('sales_rep_id', $salesRep->id)
+            ->whereDate('created_at', $today)
+            ->count();
+
+        $todaySales = \App\Models\StoreOrder::where('sales_rep_id', $salesRep->id)
+            ->whereDate('created_at', $today)
+            ->sum('grand_total');
+
+        $pendingOrders = \App\Models\StoreOrder::where('sales_rep_id', $salesRep->id)
+            ->where('order_status', 'pending')
+            ->count();
+
+        // Today's schedule
+        $todaySchedule = \App\Models\StoreVisit::with(['retailStore'])
+            ->where('sales_rep_id', $salesRep->id)
+            ->whereDate('visit_date', $today)
+            ->orderBy('scheduled_time')
+            ->get()
+            ->map(function ($visit) {
+                $visit->status_color = $this->getVisitStatusColor($visit->visit_status);
+                $visit->status_icon = $this->getVisitStatusIcon($visit->visit_status);
+                return $visit;
+            });
+
+        // Recent orders
+        $recentOrders = \App\Models\StoreOrder::with(['retailStore'])
+            ->where('sales_rep_id', $salesRep->id)
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        // My stores
+        $myStores = \App\Models\RetailStore::where('sales_rep_id', $salesRep->id)
+            ->orderBy('name')
+            ->get();
+
+        // Weekly performance data for chart
+        $weeklyPerformance = $this->getWeeklyPerformanceData($salesRep->id);
+
+        return view('backend.sales_representatives.mobile_dashboard', compact(
+            'todayVisits', 'todayOrders', 'todaySales', 'pendingOrders',
+            'todaySchedule', 'recentOrders', 'myStores', 'salesRep', 'weeklyPerformance'
+        ));
+    }
+
+    /**
+     * Helper methods for mobile dashboard
+     */
+    private function getVisitStatusColor($status)
+    {
+        $colors = [
+            'pending' => 'warning',
+            'in_progress' => 'primary',
+            'completed' => 'success',
+            'cancelled' => 'danger'
+        ];
+        return $colors[$status] ?? 'secondary';
+    }
+
+    private function getVisitStatusIcon($status)
+    {
+        $icons = [
+            'pending' => 'clock',
+            'in_progress' => 'play-circle',
+            'completed' => 'check-circle',
+            'cancelled' => 'times-circle'
+        ];
+        return $icons[$status] ?? 'question-circle';
+    }
+
+    /**
+     * API: Update GPS location for sales rep
+     */
+    public function updateLocation(Request $request)
+    {
+        $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180'
+        ]);
+
+        $salesRep = SalesRepresentative::where('user_id', auth()->id())->first();
+        if (!$salesRep) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $salesRep->update([
+            'current_latitude' => $request->latitude,
+            'current_longitude' => $request->longitude,
+            'last_location_update' => now(),
+            'gps_enabled' => true
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Location updated successfully']);
+    }
+
+    /**
+     * Start a store visit (check-in)
+     */
+    public function startVisit(Request $request, $visitId)
+    {
+        $salesRep = SalesRepresentative::where('user_id', auth()->id())->first();
+        if (!$salesRep) {
+            abort(403, 'Unauthorized access');
+        }
+
+        $visit = \App\Models\StoreVisit::where('id', $visitId)
+            ->where('sales_rep_id', $salesRep->id)
+            ->firstOrFail();
+
+        $visit->update([
+            'visit_status' => 'in_progress',
+            'check_in_time' => now()
+        ]);
+
+        // Update location if provided
+        if ($request->has('latitude') && $request->has('longitude')) {
+            $salesRep->update([
+                'current_latitude' => $request->latitude,
+                'current_longitude' => $request->longitude,
+                'last_location_update' => now()
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Visit started successfully');
+    }
+
+    /**
+     * Complete a store visit (check-out)
+     */
+    public function completeVisit(Request $request, $visitId)
+    {
+        $salesRep = SalesRepresentative::where('user_id', auth()->id())->first();
+        if (!$salesRep) {
+            abort(403, 'Unauthorized access');
+        }
+
+        $visit = \App\Models\StoreVisit::where('id', $visitId)
+            ->where('sales_rep_id', $salesRep->id)
+            ->firstOrFail();
+
+        $request->validate([
+            'notes' => 'nullable|string',
+            'photos' => 'nullable|array',
+            'photos.*' => 'image|mimes:jpeg,png,jpg|max:2048',
+            'order_amount' => 'nullable|numeric|min:0'
+        ]);
+
+        // Handle photo uploads
+        $photoUrls = [];
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $path = $photo->store('visit_photos', 'public');
+                $photoUrls[] = $path;
+            }
+        }
+
+        $visit->update([
+            'visit_status' => 'completed',
+            'check_out_time' => now(),
+            'notes' => $request->notes,
+            'photos' => $photoUrls,
+            'order_amount' => $request->order_amount ?? 0
+        ]);
+
+        // Update sales rep stats
+        $salesRep->increment('successful_visits');
+
+        return redirect()->back()->with('success', 'Visit completed successfully');
+    }
+
+    /**
+     * Get nearby stores for sales rep
+     */
+    public function getNearbyStores(Request $request)
+    {
+        $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'radius' => 'nullable|numeric|min:1|max:50' // km
+        ]);
+
+        $salesRep = SalesRepresentative::where('user_id', auth()->id())->first();
+        if (!$salesRep) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $radius = $request->get('radius', 10); // Default 10km
+
+        $nearbyStores = \App\Models\RetailStore::select([
+            'id', 'name', 'address', 'phone', 'latitude', 'longitude',
+            \DB::raw("(6371 * acos(cos(radians({$request->latitude})) 
+                * cos(radians(latitude)) 
+                * cos(radians(longitude) - radians({$request->longitude})) 
+                + sin(radians({$request->latitude})) 
+                * sin(radians(latitude)))) AS distance")
+        ])
+        ->where('sales_rep_id', $salesRep->id)
+        ->whereNotNull('latitude')
+        ->whereNotNull('longitude')
+        ->having('distance', '<', $radius)
+        ->orderBy('distance')
+        ->limit(20)
+        ->get();
+
+        return response()->json(['stores' => $nearbyStores]);
+    }
+
+    /**
+     * Performance Analytics for Sales Rep
+     */
+    public function analytics(Request $request)
+    {
+        // Check if user is admin or sales rep
+        $user = auth()->user();
+        
+        // If admin, get the first sales rep for demo or handle differently
+        if ($user->user_type == 'admin' || $user->user_type == 'staff') {
+            // Admin accessing analytics - get specific sales rep ID from request or show overview
+            $salesRepId = $request->get('sales_rep_id');
+            
+            if ($salesRepId) {
+                $salesRep = SalesRepresentative::find($salesRepId);
+                if (!$salesRep) {
+                    // Invalid sales rep ID provided, show demo data instead
+                    return $this->showEmptyAnalytics($request);
+                }
+            } else {
+                // Show list of sales reps to choose from or get first one for demo
+                $salesRep = SalesRepresentative::first();
+                if (!$salesRep) {
+                    // No sales reps exist, create dummy data
+                    return $this->showEmptyAnalytics($request);
+                }
+            }
+        } else {
+            // Regular sales rep user
+            $salesRep = SalesRepresentative::where('user_id', auth()->id())->first();
+            if (!$salesRep) {
+                abort(403, 'Unauthorized access - No sales representative profile found');
+            }
+        }
+
+        $period = $request->get('period', 'monthly'); // daily, weekly, monthly, yearly
+        $startDate = $this->getAnalyticsStartDate($period);
+        $endDate = now();
+
+        // Performance metrics with proper null handling
+        $metrics = [
+            'visits' => \App\Models\StoreVisit::where('sales_rep_id', $salesRep->id)
+                ->whereBetween('visit_date', [$startDate, $endDate])
+                ->count() ?? 0,
+            'completed_visits' => \App\Models\StoreVisit::where('sales_rep_id', $salesRep->id)
+                ->where('visit_status', 'completed')
+                ->whereBetween('visit_date', [$startDate, $endDate])
+                ->count() ?? 0,
+            'orders' => \App\Models\StoreOrder::where('sales_rep_id', $salesRep->id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count() ?? 0,
+            'sales_amount' => (float) (\App\Models\StoreOrder::where('sales_rep_id', $salesRep->id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('grand_total') ?? 0),
+            'commission_earned' => (float) (\App\Models\SalesCommission::where('sales_rep_id', $salesRep->id)
+                ->where('status', 'approved')
+                ->whereBetween('commission_date', [$startDate, $endDate])
+                ->sum('commission_amount') ?? 0)
+        ];
+
+        // Visit success rate with safe calculation
+        $metrics['success_rate'] = ($metrics['visits'] > 0 && $metrics['completed_visits'] >= 0) 
+            ? round(($metrics['completed_visits'] / $metrics['visits']) * 100, 2) 
+            : 0;
+
+        // Average order value with safe calculation
+        $metrics['avg_order_value'] = ($metrics['orders'] > 0 && $metrics['sales_amount'] > 0) 
+            ? round($metrics['sales_amount'] / $metrics['orders'], 2) 
+            : 0;
+            
+        // Conversion rate (orders per visit)
+        $metrics['conversion_rate'] = ($metrics['visits'] > 0 && $metrics['orders'] >= 0) 
+            ? round(($metrics['orders'] / $metrics['visits']) * 100, 2) 
+            : 0;
+            
+        // Sales per visit with safe calculation  
+        $metrics['sales_per_visit'] = ($metrics['visits'] > 0 && $metrics['sales_amount'] > 0) 
+            ? round($metrics['sales_amount'] / $metrics['visits'], 2) 
+            : 0;
+
+        // Daily/Weekly trends
+        $trends = \App\Models\StoreVisit::selectRaw('DATE(visit_date) as date, COUNT(*) as visits')
+            ->where('sales_rep_id', $salesRep->id)
+            ->whereBetween('visit_date', [$startDate, $endDate])
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        return view('backend.sales_representatives.analytics', compact('metrics', 'trends', 'period', 'salesRep'));
+    }
+
+    /**
+     * Update FCM token for push notifications
+     */
+    public function updateFcmToken(Request $request)
+    {
+        $request->validate(['fcm_token' => 'required|string']);
+
+        $salesRep = SalesRepresentative::where('user_id', auth()->id())->first();
+        if (!$salesRep) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $salesRep->update(['fcm_token' => $request->fcm_token]);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Bulk upload visit photos
+     */
+    public function uploadVisitPhotos(Request $request, $visitId)
+    {
+        $request->validate([
+            'photos' => 'required|array|max:10',
+            'photos.*' => 'image|mimes:jpeg,png,jpg|max:5120' // 5MB max per image
+        ]);
+
+        $salesRep = SalesRepresentative::where('user_id', auth()->id())->first();
+        if (!$salesRep) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $visit = \App\Models\StoreVisit::where('id', $visitId)
+            ->where('sales_rep_id', $salesRep->id)
+            ->firstOrFail();
+
+        $existingPhotos = $visit->photos ?? [];
+        $newPhotos = [];
+
+        foreach ($request->file('photos') as $photo) {
+            $filename = time() . '_' . uniqid() . '.' . $photo->extension();
+            $path = $photo->storeAs('visit_photos', $filename, 'public');
+            $newPhotos[] = $path;
+        }
+
+        $allPhotos = array_merge($existingPhotos, $newPhotos);
+        $visit->update(['photos' => $allPhotos]);
+
+        return response()->json([
+            'success' => true,
+            'photos' => $newPhotos,
+            'total_photos' => count($allPhotos)
+        ]);
+    }
+
+    /**
+     * Get weekly performance data for charts
+     */
+    private function getWeeklyPerformanceData($salesRepId)
+    {
+        $weeklyData = [];
+        $startOfWeek = Carbon::now()->startOfWeek();
+        
+        for ($i = 0; $i < 7; $i++) {
+            $date = $startOfWeek->copy()->addDays($i);
+            
+            $visits = \App\Models\StoreVisit::where('sales_rep_id', $salesRepId)
+                ->whereDate('visit_date', $date)
+                ->count();
+                
+            $orders = \App\Models\StoreOrder::where('sales_rep_id', $salesRepId)
+                ->whereDate('created_at', $date)
+                ->count();
+                
+            $sales = \App\Models\StoreOrder::where('sales_rep_id', $salesRepId)
+                ->whereDate('created_at', $date)
+                ->sum('grand_total');
+            
+            $weeklyData[] = [
+                'date' => $date->format('M j'),
+                'day' => $date->format('D'),
+                'visits' => $visits,
+                'orders' => $orders,
+                'sales' => (float) $sales
+            ];
+        }
+        
+        return $weeklyData;
+    }
+
+    /**
+     * Helper method to get start date for analytics
+     */
+    private function getAnalyticsStartDate($period)
+    {
+        switch ($period) {
+            case 'daily':
+                return now()->startOfDay();
+            case 'weekly':
+                return now()->startOfWeek();
+            case 'monthly':
+                return now()->startOfMonth();
+            case 'yearly':
+                return now()->startOfYear();
+            default:
+                return now()->startOfMonth();
+        }
+    }
+    
+    private function showEmptyAnalytics($request)
+    {
+        $period = $request->get('period', 'monthly');
+        
+        // Create dummy sales rep object for the view
+        $salesRep = (object) [
+            'id' => 0,
+            'name' => 'Demo User',
+            'sales_target_monthly' => 0,
+            'commission_rate' => 0
+        ];
+        
+        // Empty metrics
+        $metrics = [
+            'visits' => 0,
+            'completed_visits' => 0,
+            'orders' => 0,
+            'sales_amount' => 0,
+            'commission_earned' => 0,
+            'success_rate' => 0,
+            'avg_order_value' => 0,
+            'conversion_rate' => 0,
+            'sales_per_visit' => 0
+        ];
+        
+        // Empty trends
+        $trends = [];
+        
+        return view('backend.sales_representatives.analytics', compact('metrics', 'trends', 'period', 'salesRep'));
+    }
 }

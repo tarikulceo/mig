@@ -66,11 +66,11 @@
                     </td>
                     <td>
                         @if($commission->status == 'paid')
-                            <span class="badge badge-success">{{ translate('Paid') }}</span>
+                            <span class="badge badge-inline badge-success">{{ translate('Paid') }}</span>
                         @elseif($commission->status == 'pending')
-                            <span class="badge badge-warning">{{ translate('Pending') }}</span>
+                            <span class="badge badge-inline badge-warning">{{ translate('Pending') }}</span>
                         @else
-                            <span class="badge badge-secondary">{{ translate('Cancelled') }}</span>
+                            <span class="badge badge-inline badge-secondary">{{ translate('Cancelled') }}</span>
                         @endif
                     </td>
                     <td>{{ date('M d, Y', strtotime($commission->created_at)) }}</td>

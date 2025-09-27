@@ -2207,6 +2207,23 @@
                                 <span class="aiz-side-nav-text">{{translate('Store Visits')}}</span>
                             </a>
                         </li>
+                        <li class="aiz-side-nav-item">
+                            <a href="{{ route('store_orders.index') }}" class="aiz-side-nav-link">
+                                <span class="aiz-side-nav-text">{{translate('My Orders')}}</span>
+                            </a>
+                        </li>
+                        <li class="aiz-side-nav-item">
+                            <a href="{{ route('sales_representatives.mobile_dashboard') }}" class="aiz-side-nav-link">
+                                <span class="aiz-side-nav-text">{{translate('Mobile Dashboard')}}</span>
+                                <span class="badge badge-primary badge-sm ml-2">📱</span>
+                            </a>
+                        </li>
+                        <li class="aiz-side-nav-item">
+                            <a href="{{ route('sales_representatives.analytics') }}" class="aiz-side-nav-link {{ areActiveRoutes(['sales_representatives.analytics'])}}">
+                                <span class="aiz-side-nav-text">{{translate('Analytics')}}</span>
+                                <span class="badge badge-success badge-sm ml-2">📊</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 @endif
@@ -2264,6 +2281,14 @@
                             </a>
                         </li>
                         @endcan
+                        @can('view_sales_analytics')
+                        <li class="aiz-side-nav-item">
+                            <a href="{{ route('sales_representatives.analytics') }}" 
+                                class="aiz-side-nav-link {{ areActiveRoutes(['sales_representatives.analytics'])}}">
+                                <span class="aiz-side-nav-text">{{translate('Performance Analytics')}}</span>
+                            </a>
+                        </li>
+                        @endcan
                         @can('manage_sales_activities')
                         <li class="aiz-side-nav-item">
                             <a href="{{ route('sales_activities.index') }}" 
@@ -2284,6 +2309,23 @@
                                 <span class="aiz-side-nav-text">{{translate('Store Visits')}}</span>
                             </a>
                         </li>
+                        @can('view_store_orders')
+                        <li class="aiz-side-nav-item">
+                            <a href="{{ route('store_orders.index') }}" 
+                                class="aiz-side-nav-link {{ areActiveRoutes(['store_orders.index', 'store_orders.create', 'store_orders.edit', 'store_orders.show'])}}">
+                                <span class="aiz-side-nav-text">{{translate('Store Orders')}}</span>
+                            </a>
+                        </li>
+                        <li class="aiz-side-nav-item">
+                            <a href="{{ route('store_orders.due_amounts') }}" 
+                                class="aiz-side-nav-link {{ areActiveRoutes(['store_orders.due_amounts'])}}">
+                                <span class="aiz-side-nav-text">{{translate('Due Amounts')}}</span>
+                                <span class="badge badge-danger badge-pill ml-1">
+                                    {{ \App\Models\StoreOrder::where('due_amount', '>', 0)->count() }}
+                                </span>
+                            </a>
+                        </li>
+                        @endcan
                     </ul>
                 </li>
                 @endcanany

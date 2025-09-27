@@ -12,6 +12,7 @@ class SalesCommission extends Model
     protected $fillable = [
         'sales_rep_id',
         'order_id',
+        'store_order_id',
         'order_detail_id',
         'product_id',
         'commission_amount',
@@ -42,6 +43,7 @@ class SalesCommission extends Model
 
     const COMMISSION_TYPES = [
         'order' => 'Order Commission',
+        'store_order' => 'Store Order Commission',
         'product_based' => 'Product-Based Commission',
         'target' => 'Target Achievement',
         'bonus' => 'Bonus Commission'
@@ -68,6 +70,11 @@ class SalesCommission extends Model
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function storeOrder()
+    {
+        return $this->belongsTo(StoreOrder::class, 'store_order_id');
     }
 
     public function orderDetail()

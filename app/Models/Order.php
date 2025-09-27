@@ -28,6 +28,16 @@ class Order extends Model
         return $this->belongsTo(SalesRepresentative::class, 'sales_rep_id');
     }
 
+    public function retailStore()
+    {
+        return $this->belongsTo(RetailStore::class, 'retail_store_id');
+    }
+
+    public function storeVisit()
+    {
+        return $this->belongsTo(StoreVisit::class, 'store_visit_id');
+    }
+
     public function shop()
     {
         return $this->hasOne(Shop::class, 'user_id', 'seller_id');
